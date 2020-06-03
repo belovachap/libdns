@@ -1,0 +1,3 @@
+import libs = libdns%lib{dns}
+
+exe{driver}: {h c}{**} $libs testscript{**}

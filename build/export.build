@@ -1,0 +1,6 @@
+$out_root/
+{
+  include libdns/
+}
+
+export $out_root/libdns/$import.target

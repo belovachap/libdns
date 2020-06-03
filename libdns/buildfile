@@ -1,0 +1,51 @@
+int_libs = # Interface dependencies.
+imp_libs = # Implementation dependencies.
+#import imp_libs += libhello%lib{hello}
+
+lib{dns}: {h c}{** -version} h{version} $imp_libs $int_libs
+
+# Include the generated version header into the distribution (so that we don't
+# pick up an installed one) and don't remove it when cleaning in src (so that
+# clean results in a state identical to distributed).
+#
+h{version}: in{version} $src_root/manifest
+{
+  dist  = true
+  clean = ($src_root != $out_root)
+}
+
+# Build options.
+#
+c.poptions =+ "-I$out_root" "-I$src_root"
+
+obja{*}: c.poptions += -DLIBDNS_STATIC_BUILD
+objs{*}: c.poptions += -DLIBDNS_SHARED_BUILD
+
+# Export options.
+#
+lib{dns}:
+{
+  c.export.poptions = "-I$out_root" "-I$src_root"
+  c.export.libs = $int_libs
+}
+
+liba{dns}: c.export.poptions += -DLIBDNS_STATIC
+libs{dns}: c.export.poptions += -DLIBDNS_SHARED
+
+# For pre-releases use the complete version to make sure they cannot be used
+# in place of another pre-release or the final version. See the version module
+# for details on the version.* variable values.
+#
+if $version.pre_release
+  lib{dns}: bin.lib.version = @"-$version.project_id"
+else
+  lib{dns}: bin.lib.version = @"-$version.major.$version.minor"
+
+# Install into the libdns/ subdirectory of, say, /usr/include/
+# recreating subdirectories.
+#
+{h}{*}:
+{
+  install         = include/libdns/
+  install.subdirs = true
+}

@@ -1,0 +1,33 @@
+#pragma once
+
+// The numeric version format is AAAAABBBBBCCCCCDDDE where:
+//
+// AAAAA - major version number
+// BBBBB - minor version number
+// CCCCC - bugfix version number
+// DDD   - alpha / beta (DDD + 500) version number
+// E     - final (0) / snapshot (1)
+//
+// When DDDE is not 0, 1 is subtracted from AAAAABBBBBCCCCC. For example:
+//
+// Version      AAAAABBBBBCCCCCDDDE
+//
+// 0.1.0        0000000001000000000
+// 0.1.2        0000000001000020000
+// 1.2.3        0000100002000030000
+// 2.2.0-a.1    0000200001999990010
+// 3.0.0-b.2    0000299999999995020
+// 2.2.0-a.1.z  0000200001999990011
+//
+#define LIBDNS_VERSION       $libdns.version.project_number$ULL
+#define LIBDNS_VERSION_STR   "$libdns.version.project$"
+#define LIBDNS_VERSION_ID    "$libdns.version.project_id$"
+
+#define LIBDNS_VERSION_MAJOR $libdns.version.major$
+#define LIBDNS_VERSION_MINOR $libdns.version.minor$
+#define LIBDNS_VERSION_PATCH $libdns.version.patch$
+
+#define LIBDNS_PRE_RELEASE   $libdns.version.pre_release$
+
+#define LIBDNS_SNAPSHOT_SN   $libdns.version.snapshot_sn$ULL
+#define LIBDNS_SNAPSHOT_ID   "$libdns.version.snapshot_id$"
