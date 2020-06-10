@@ -1,6 +1,6 @@
 : 1
 name: libdns
-version: 0.1.0-a.0.z
+version: 0.1.0
 summary: dns C library
 license: proprietary
 description-file: README.md
