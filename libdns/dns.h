@@ -1,8 +1,11 @@
 #pragma once
 
-#include <stdint.h>
-
+#include <arpa/inet.h>
 #include <liblog/log.h>
+#include <stdbool.h>
+#include <string.h>
+#include <time.h>
+#include <unistd.h>
 
 typedef struct {
     int v;

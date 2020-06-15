@@ -1,19 +1,4 @@
-#include <stdbool.h>
-#include <stdio.h>
-#include <string.h>
-#include <strings.h>
-#include <stdlib.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <stdint.h>
-#include <sys/types.h>
-#include <arpa/inet.h>
-#include <time.h>
-#include <ctype.h>
-#include <unistd.h>
-
 #include <libdns/dns.h>
-
 
 #define BUFLEN 512
 
