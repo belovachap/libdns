@@ -1,6 +1,6 @@
 int_libs = # Interface dependencies.
 imp_libs = # Implementation dependencies.
-#import imp_libs += libhello%lib{hello}
+import int_libs += liblog%lib{log}
 
 lib{dns}: {h c}{** -version} h{version} $imp_libs $int_libs
 

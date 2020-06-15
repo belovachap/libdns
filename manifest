@@ -8,4 +8,4 @@ url: https://example.org/libdns
 email: chapman.shoop@gmail.com
 depends: * build2 >= 0.12.0
 depends: * bpkg >= 0.12.0
-#depends: libhello ^1.0.0
+depends: liblog ^0.1.0

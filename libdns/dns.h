@@ -2,8 +2,7 @@
 
 #include <stdint.h>
 
-#include <libdns/export.h>
-
+#include <liblog/log.h>
 
 typedef struct {
     int v;
