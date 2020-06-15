@@ -337,76 +337,89 @@ error:
 static int listenSocket = -1;
 
 int dnsserver(dns_opt_t *opt) {
-  struct sockaddr_in6 si6_other;
-  int senderSocket = -1;
-  senderSocket = socket(AF_INET6, SOCK_DGRAM, IPPROTO_UDP);
-  if (senderSocket == -1) 
-    return -3;
+    log_trace("Entering dnsserver()");
 
-  int replySocket;
-  if (listenSocket == -1) {
-    struct sockaddr_in6 si6_me;
-    if ((listenSocket=socket(AF_INET6, SOCK_DGRAM, IPPROTO_UDP))==-1) {
-      listenSocket = -1;
-      return -1;
+    struct sockaddr_in6 si6_other;
+    int senderSocket = -1;
+    senderSocket = socket(AF_INET6, SOCK_DGRAM, IPPROTO_UDP);
+    if (senderSocket == -1) {
+        log_error("Could not create sender socket: -3");
+        log_trace("Exiting dnsserver()");
+        return -3;
     }
-    replySocket = socket(AF_INET6, SOCK_DGRAM, IPPROTO_UDP);
-    if (replySocket == -1)
-    {
-      close(listenSocket);
-      return -1;
-    }
-    int sockopt = 1;
-    setsockopt(listenSocket, IPPROTO_IP, DSTADDR_SOCKOPT, &sockopt, sizeof sockopt);
-    memset((char *) &si6_me, 0, sizeof(si6_me));
-    si6_me.sin6_family = AF_INET6;
-    si6_me.sin6_port = htons(opt->port);
-    si6_me.sin6_addr = in6addr_any;
-    if (bind(listenSocket, (struct sockaddr*)&si6_me, sizeof(si6_me))==-1)
-      return -2;
-  }
-  
-  unsigned char inbuf[BUFLEN], outbuf[BUFLEN];
-  struct iovec iov[1] = {
-    {
-      .iov_base = inbuf,
-      .iov_len = sizeof(inbuf),
-    },
-  };
-  union control_data cmsg;
-  struct msghdr msg = {
-    .msg_name = &si6_other,
-    .msg_namelen = sizeof(si6_other),
-    .msg_iov = iov,
-    .msg_iovlen = 1,
-    .msg_control = &cmsg,
-    .msg_controllen = sizeof(cmsg),
-  };
-  for (; 1; ++(opt->nRequests))
-  {
-    ssize_t insize = recvmsg(listenSocket, &msg, 0);
-    if (insize <= 0)
-      continue;
 
-    ssize_t ret = dnshandle(opt, inbuf, insize, outbuf);
-    if (ret <= 0)
-      continue;
-
-    bool handled = false;
-    for (struct cmsghdr*hdr = CMSG_FIRSTHDR(&msg); hdr; hdr = CMSG_NXTHDR(&msg, hdr))
-    {
-      if (hdr->cmsg_level == IPPROTO_IP && hdr->cmsg_type == DSTADDR_SOCKOPT)
-      {
-        msg.msg_iov[0].iov_base = outbuf;
-        msg.msg_iov[0].iov_len = ret;
-        sendmsg(listenSocket, &msg, 0);
-        msg.msg_iov[0].iov_base = inbuf;
-        msg.msg_iov[0].iov_len = sizeof(inbuf);
-        handled = true;
-      }
+    int replySocket;
+    if (listenSocket == -1) {
+        struct sockaddr_in6 si6_me;
+        if ((listenSocket=socket(AF_INET6, SOCK_DGRAM, IPPROTO_UDP))==-1) {
+            log_error("Could not create listen socket: -1");
+            log_trace("Exiting dnsserver()");
+            listenSocket = -1;
+            return -1;
+        }
+        replySocket = socket(AF_INET6, SOCK_DGRAM, IPPROTO_UDP);
+        if (replySocket == -1) {
+            log_error("Could not create reply socket: -1");
+            log_trace("Exiting dnsserver()");
+            close(listenSocket);
+            return -1;
+        }
+        int sockopt = 1;
+        setsockopt(listenSocket, IPPROTO_IP, DSTADDR_SOCKOPT, &sockopt, sizeof sockopt);
+        memset((char *) &si6_me, 0, sizeof(si6_me));
+        si6_me.sin6_family = AF_INET6;
+        si6_me.sin6_port = htons(opt->port);
+        si6_me.sin6_addr = in6addr_any;
+        if (bind(listenSocket, (struct sockaddr*)&si6_me, sizeof(si6_me))==-1) {
+            log_error("Could not bind on listen socket: -2");
+            log_trace("Exiting dnsserver()");
+            return -2;
+        }
     }
-    if (!handled)
-      sendto(listenSocket, outbuf, ret, 0, (struct sockaddr*)&si6_other, sizeof(si6_other));
-  }
-  return 0;
+
+    unsigned char inbuf[BUFLEN], outbuf[BUFLEN];
+    struct iovec iov[1] = {{.iov_base = inbuf, .iov_len = sizeof(inbuf)}};
+    union control_data cmsg;
+    struct msghdr msg = {
+        .msg_name = &si6_other,
+        .msg_namelen = sizeof(si6_other),
+        .msg_iov = iov,
+        .msg_iovlen = 1,
+        .msg_control = &cmsg,
+        .msg_controllen = sizeof(cmsg),
+    };
+
+    for (; 1; ++(opt->nRequests)) {
+        ssize_t insize = recvmsg(listenSocket, &msg, 0);
+        log_debug("recvmsg() returned:  %d", insize);
+        if (insize <= 0) {
+            continue;
+        }
+
+        ssize_t ret = dnshandle(opt, inbuf, insize, outbuf);
+        log_debug("dnshandle() returned:  %d", ret);
+        if (ret <= 0) {
+            continue;
+        }
+
+        bool handled = false;
+        for (struct cmsghdr*hdr = CMSG_FIRSTHDR(&msg); hdr; hdr = CMSG_NXTHDR(&msg, hdr)) {
+            if (hdr->cmsg_level == IPPROTO_IP && hdr->cmsg_type == DSTADDR_SOCKOPT) {
+                msg.msg_iov[0].iov_base = outbuf;
+                msg.msg_iov[0].iov_len = ret;
+                sendmsg(listenSocket, &msg, 0);
+                msg.msg_iov[0].iov_base = inbuf;
+                msg.msg_iov[0].iov_len = sizeof(inbuf);
+                log_debug("msg handled in loop");
+                handled = true;
+            }
+        }
+        if (!handled) {
+            log_debug("msg handled out of loop");
+            sendto(listenSocket, outbuf, ret, 0, (struct sockaddr*)&si6_other, sizeof(si6_other));
+        }
+    }
+
+    log_trace("Exiting dnsserver()");
+    return 0;
 }
